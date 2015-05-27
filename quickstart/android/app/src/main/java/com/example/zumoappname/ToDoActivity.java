@@ -169,13 +169,8 @@ public class ToDoActivity extends Activity {
                             }
                         }
                     });
-                } catch (final Exception e){
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            createAndShowDialog(e, "Error");
-                        }
-                    });
+                } catch (final Exception e) {
+                    createAndShowDialogFromTask(e, "Error");
                 }
 
                 return null;
@@ -220,15 +215,9 @@ public class ToDoActivity extends Activity {
                             }
                         }
                     });
-                } catch (final Exception e){
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            createAndShowDialog(e, "Error");
-                        }
-                    });
+                } catch (final Exception e) {
+                    createAndShowDialogFromTask(e, "Error");
                 }
-
                 return null;
             }
         };
@@ -264,8 +253,7 @@ public class ToDoActivity extends Activity {
                         }
                     });
                 } catch (Exception e){
-                    createAndShowDialog(e, "Error");
-
+                    createAndShowDialogFromTask(e, "Error");
                 }
 
                 return null;
@@ -306,12 +294,7 @@ public class ToDoActivity extends Activity {
                         }
                     });
                 } catch (final Exception e){
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            createAndShowDialog(e, "Error");
-                        }
-                    });
+                            createAndShowDialogFromTask(e, "Error");
                 }
 
                 return null;
@@ -321,7 +304,13 @@ public class ToDoActivity extends Activity {
         runAsyncTask(task);
     }
 
-
+    /**
+     * Initialize local storage
+     * @return
+     * @throws MobileServiceLocalStoreException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     private AsyncTask<Void, Void, Void> initLocalStore() throws MobileServiceLocalStoreException, ExecutionException, InterruptedException {
 
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
@@ -347,13 +336,8 @@ public class ToDoActivity extends Activity {
 
                     syncContext.initialize(localStore, handler).get();
 
-                } catch (final Exception e){
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            createAndShowDialog(e, "Error");
-                        }
-                    });
+                } catch (final Exception e) {
+                    createAndShowDialogFromTask(e, "Error");
                 }
 
                 return null;
@@ -363,7 +347,11 @@ public class ToDoActivity extends Activity {
         return runAsyncTask(task);
     }
 
-    private AsyncTask<Void, Void, Void> sync() throws ExecutionException, InterruptedException {
+    /**
+     * Sync the current context and table
+     * @return
+     */
+    private AsyncTask<Void, Void, Void> sync() {
 
         AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>(){
             @Override
@@ -375,13 +363,8 @@ public class ToDoActivity extends Activity {
 
                     mToDoTable.pull(null).get();
 
-                } catch (final Exception e){
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            createAndShowDialog(e, "Error");
-                        }
-                    });
+                } catch (final Exception e) {
+                    createAndShowDialogFromTask(e, "Error");
                 }
 
                 return null;
@@ -390,6 +373,24 @@ public class ToDoActivity extends Activity {
 
         return runAsyncTask(task);
     }
+
+    /**
+     * Creates a dialog and shows it
+     *
+     * @param exception
+     *            The exception to show in the dialog
+     * @param title
+     *            The dialog title
+     */
+    private void createAndShowDialogFromTask(final Exception exception, String title) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                createAndShowDialog(exception, "Error");
+            }
+        });
+    }
+
 
     /**
      * Creates a dialog and shows it
@@ -423,6 +424,11 @@ public class ToDoActivity extends Activity {
         builder.create().show();
     }
 
+    /**
+     * Run an ASync task on the corresponding executor
+     * @param task
+     * @return
+     */
     private AsyncTask<Void, Void, Void> runAsyncTask(AsyncTask<Void, Void, Void> task) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             return task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
