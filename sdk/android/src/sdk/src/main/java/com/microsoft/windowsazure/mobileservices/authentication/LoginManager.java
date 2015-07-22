@@ -57,6 +57,7 @@ import com.microsoft.windowsazure.mobileservices.http.ServiceFilterResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.protocol.HTTP;
 
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Locale;
@@ -147,9 +148,15 @@ public class LoginManager {
         }
 
         // Create login URL
-        String startUrl = mClient.getAppUrl().toString() + LoginManager.START_URL + normalizeProvider(provider) + normalizeParameters(parameters);
+
+        URL baseUrl = mClient.getAppUrl();
+
+        if (mClient.getAppServiceGatewayUrl() != null) {
+            baseUrl = mClient.getAppServiceGatewayUrl();
+        }
+        String startUrl = baseUrl.toString() + LoginManager.START_URL + normalizeProvider(provider) + normalizeParameters(parameters);
         // Create the expected end URL
-        String endUrl = mClient.getAppUrl().toString() + LoginManager.END_URL;
+        String endUrl = baseUrl.toString() + LoginManager.END_URL;
 
         // Shows an interactive view with the provider's login
         showLoginUI(startUrl, endUrl, context, new LoginUIOperationCallback() {

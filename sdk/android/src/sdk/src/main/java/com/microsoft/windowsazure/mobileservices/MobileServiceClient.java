@@ -113,6 +113,10 @@ public class MobileServiceClient {
      */
     private URL mAppUrl;
     /**
+     * Absolute URI of the Azure App Service Gateway.
+     */
+    private URL mAppServiceGatewayUrl;
+    /**
      * Flag to indicate that a login operation is in progress
      */
     private boolean mLoginInProgress;
@@ -154,6 +158,18 @@ public class MobileServiceClient {
      * @param context The Context where the MobileServiceClient is created
      * @throws java.net.MalformedURLException
      */
+    public MobileServiceClient(String appGatewayUrl, String appUrl, String appKey, Context context) throws MalformedURLException {
+        this(new URL(appGatewayUrl), new URL(appUrl), appKey, context);
+    }
+
+    /**
+     * Constructor for the MobileServiceClient
+     *
+     * @param appUrl  Mobile Service URL
+     * @param appKey  Mobile Service application key
+     * @param context The Context where the MobileServiceClient is created
+     * @throws java.net.MalformedURLException
+     */
     public MobileServiceClient(String appUrl, String appKey, Context context) throws MalformedURLException {
         this(new URL(appUrl), appKey, context);
     }
@@ -180,6 +196,20 @@ public class MobileServiceClient {
         gsonBuilder.serializeNulls(); // by default, add null serialization
 
         initialize(appUrl, appKey, null, gsonBuilder, context, new AndroidHttpClientFactoryImpl());
+    }
+
+    /**
+     * Constructor for the MobileServiceClient
+     * @param appServiceGatewayUrl  App Service Gateway URL
+     * @param appUrl  Mobile Service URL
+     * @param appKey  Mobile Service application key
+     * @param context The Context where the MobileServiceClient is created
+     */
+    public MobileServiceClient(URL appServiceGatewayUrl, URL appUrl, String appKey, Context context) {
+        GsonBuilder gsonBuilder = createMobileServiceGsonBuilder();
+        gsonBuilder.serializeNulls(); // by default, add null serialization
+
+        initialize(appServiceGatewayUrl, appUrl, appKey, null, gsonBuilder, context, new AndroidHttpClientFactoryImpl());
     }
 
     /**
@@ -820,6 +850,14 @@ public class MobileServiceClient {
     }
 
     /**
+     * Returns The Mobile Service URL
+     */
+    public URL getAppServiceGatewayUrl() {
+        return mAppServiceGatewayUrl;
+    }
+
+
+    /**
      * Indicates if a login operation is in progress
      */
     public boolean isLoginInProgress() {
@@ -1437,10 +1475,25 @@ public class MobileServiceClient {
      * @param appUrl      Mobile Service URL
      * @param appKey      Mobile Service application key
      * @param currentUser The Mobile Service user used to authenticate requests
+     * @param gsonBuiler the GsonBuilder used to in JSON Serialization/Deserialization
+     * @param context     The Context where the MobileServiceClient is created
+     */
+    private void initialize(URL appUrl, String appKey, MobileServiceUser currentUser, GsonBuilder gsonBuilder, Context context,
+                            AndroidHttpClientFactory androidHttpClientFactory) {
+       initialize(null, appUrl, appKey, currentUser, gsonBuilder, context, androidHttpClientFactory);
+
+    }
+
+    /**
+     * Initializes the MobileServiceClient
+     *
+     * @param appUrl      Mobile Service URL
+     * @param appKey      Mobile Service application key
+     * @param currentUser The Mobile Service user used to authenticate requests
      * @param gsonBuilder the GsonBuilder used to in JSON Serialization/Deserialization
      * @param context     The Context where the MobileServiceClient is created
      */
-    private void initialize(URL appUrl, String appKey, MobileServiceUser currentUser, GsonBuilder gsonBuiler, Context context,
+    private void initialize(URL appServiceGatewayUrl, URL appUrl, String appKey, MobileServiceUser currentUser, GsonBuilder gsonBuilder, Context context,
                             AndroidHttpClientFactory androidHttpClientFactory) {
         if (appUrl == null || appUrl.toString().trim().length() == 0) {
             throw new IllegalArgumentException("Invalid Application URL");
@@ -1448,6 +1501,21 @@ public class MobileServiceClient {
 
         if (context == null) {
             throw new IllegalArgumentException("Context cannot be null");
+        }
+
+        if (appServiceGatewayUrl != null) {
+            URL normalizedAppServiceGatewayUrl = appServiceGatewayUrl;
+
+            if (normalizedAppServiceGatewayUrl.getPath() == "") {
+                try {
+                    normalizedAppServiceGatewayUrl = new URL(appUrl.toString() + "/");
+                } catch (MalformedURLException e) {
+                    // This exception won't happen, since it's just adding a
+                    // trailing "/" to a valid URL
+                }
+            }
+
+            mAppServiceGatewayUrl = normalizedAppServiceGatewayUrl;
         }
 
         URL normalizedAppURL = appUrl;
@@ -1468,7 +1536,7 @@ public class MobileServiceClient {
         mLoginInProgress = false;
         mCurrentUser = currentUser;
         mContext = context;
-        mGsonBuilder = gsonBuiler;
+        mGsonBuilder = gsonBuilder;
         mAndroidHttpClientFactory = androidHttpClientFactory;
         mPush = new MobileServicePush(this, context);
         mSyncContext = new MobileServiceSyncContext(this);
@@ -1484,7 +1552,7 @@ public class MobileServiceClient {
     /**
      * Sets the GsonBuilder used to in JSON Serialization/Deserialization
      *
-     * @param mGsonBuilder The GsonBuilder to set
+     * @param gsonBuilder The GsonBuilder to set
      */
     public void setGsonBuilder(GsonBuilder gsonBuilder) {
         mGsonBuilder = gsonBuilder;
